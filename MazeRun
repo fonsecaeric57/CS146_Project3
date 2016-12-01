@@ -1,0 +1,40 @@
+package sjsu.fonseca.cs146.project3;
+
+
+public class GraphRun {
+
+    public static void main(String[] arg){
+        
+        int SIZE = 4; //size= 4, 5, 6, 7, 8, or 10
+
+        Graph maze = new Graph(SIZE);
+        maze.graphGenerator();
+        System.out.println("Maze for DFS");
+        maze.displayMaze("");
+        
+        long start = System.currentTimeMillis();
+        maze.dfs();
+        maze.printPath(maze.boxHelp[0][0], maze.boxHelp[SIZE-1][SIZE-1]);
+        System.out.println("Single Path :");
+        maze.displayMaze("");
+        System.out.println(System.currentTimeMillis() - start); //calculate run time for DFS
+        
+        System.out.println("\nDFS: ");
+        maze.displayMaze("DFS");
+
+        Graph maze1 = new Graph(SIZE);
+        maze1.graphGenerator();
+        System.out.println("\n\nMaze for BFS");
+        maze1.displayMaze("");
+        
+        long start2 = System.currentTimeMillis();
+        maze1.bfs();
+        maze1.printPath(maze1.boxHelp[0][0], maze1.boxHelp[SIZE-1][SIZE-1]);
+        System.out.println("Single Path: ");
+        maze1.displayMaze("");
+        System.out.println(System.currentTimeMillis() - start2); //calculate run time for BFS
+        
+        System.out.println("BFS: ");
+        maze1.displayMaze("BFS");
+    }
+}
