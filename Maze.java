@@ -1,308 +1,311 @@
 package sjsu.fonseca.cs146.project3;
 
 import java.util.*;
-class Graph
+public class Maze
 {
-   private static final int WHITE = 1;
-   private static final int GRAY = 2;
-   private static final int BLACK = 3;
-   private Random myRandGen;
-   private final int SIZE; //size of the graph, SIZE x SIZE
-   public int dfsVisit;
-   public int dfsTime; //dfs timer
-   public int bfsTime;
-   private Queue<Vertex> cellQueue;
-   public Vertex[][] boxHelp;
-   private Node[] linkedList; //adjacency list
+	
+   
+   static final int WHITE = 1; //White = undiscovered 
+   static final int GRAY = 2;
+   static final int BLACK = 3; //Black = discovered 
+   
+   private Random myRandom;
+   private final int SIZE; 
+   public int traversalDFS;
+   public int timerDFS; //Timer for Depth First Search 
+   public int timerBFS;
+   private Queue<Vertex> myQueue;
+   public Vertex[][] myVertex;
+   private Node[] adjList; //Adjacency List LinkedList implementation
    public String printedGraph;
 
    /**
-    * Constructor for graph
-    * @param size the size of the matrix, size x size parameters
+    * 
+    * Constructor 
+    * @param size the size of the matrix, takes a n x n matrix
     */
-   public Graph(int size) // constructor
+   public Maze(int size) 
    {
       SIZE = size;
-      cellQueue = new LinkedList<Vertex>();
-      boxHelp = new Vertex[SIZE][SIZE];
+      myQueue = new LinkedList<Vertex>();
+      myVertex = new Vertex[SIZE][SIZE];
 
-      linkedList = new Node[SIZE*SIZE];
+      adjList = new Node[SIZE*SIZE];
       for (int i = 0; i < SIZE*SIZE; i++)
       {
-         linkedList[i] = null;
+         adjList[i] = null;
       }
-      myRandGen = new Random(); 
+      myRandom = new Random(); 
    } 
 
 
    /**
-    * Inner class vertex to help implement the graph data structure
-    * From page 620 of data structures and algorithms in java pdf
+    * Vertex class 
+    * Helper class to implement graph
+    * From Chapter 13 of data structures and algorithms in java 
     */
    public class Vertex
    {
-      int visitedOrder;
+      int visited;
       public Vertex parent;
       ArrayList<Vertex> adjacent;
 
-      public boolean wasVisited;
+      public boolean alreadyVisited;
 
       public int color;
       public int label;
-      public int distance;
-      public int discoveryTime;
-      public int finishingTime;
-      public int horizontalPos;
-      public int verticalPos;
+      public int dist; //distance
+      public int timeOfDiscovery;
+      public int timeFinished;
+      public int positionHorizontal;
+      public int positionVertical;
 
       boolean isInPath;
-      public boolean isLeftColumn;
-      public boolean isRightColumn;
-      public boolean isTopRow;
-      public boolean isBottomRow;
+      public boolean leftCol;
+      public boolean rightCol;
+      public boolean topRow;
+      public boolean bottomRow;
 
-      public boolean leftWallPresent;
-      public boolean rightWallPresent;
-      public boolean topWallPresent;
-      public boolean bottomWallPresent;
+      public boolean leftWallOccur;
+      public boolean rightWallOccur;
+      public boolean topWallOccur;
+      public boolean bottomWallOccur;
 
       /**
-       * Constructor for the vertex inner class
+       * Constructor for the vertexChange class
        * @param horizontal the horizontal position
-       * @param vertical the vertical position
-       * @param lab the label
+       * @param vertexChangeical the vertexChangeical position
+       * @param myLabel the label
        */
-      public Vertex(int horizontal, int vertical, int lab)
+      public Vertex(int horizontal, int vertexChangeical, int myLabel)
       {
-         label = lab;
-         wasVisited = false;
-         horizontalPos = horizontal;
-         verticalPos = vertical;
+         label = myLabel;
+         alreadyVisited = false;
+         positionHorizontal = horizontal;
+         positionVertical = vertexChangeical;
          isInPath = false;
          color = WHITE;
          adjacent = new ArrayList<>();
-         visitedOrder = 0;       
+         visited = 0;       
 
-         isLeftColumn = false;
-         isRightColumn = false;
-         isTopRow = false;
-         isBottomRow = false;
+         leftCol = false;
+         rightCol = false;
+         topRow = false;
+         bottomRow = false;
 
-         leftWallPresent = true;
-         rightWallPresent = true;
-         topWallPresent = true;
-         bottomWallPresent = true;
+         leftWallOccur = true;
+         rightWallOccur = true;
+         topWallOccur = true;
+         bottomWallOccur = true;
 
          if (horizontal == 0)
          {
-            isLeftColumn = true;
+            leftCol = true;
          }
 
          if (horizontal == SIZE -1)
          {
-            isRightColumn = true;
+            rightCol = true;
          }
-         if (vertical == 0)
+         if (vertexChangeical == 0)
          {
-            isTopRow = true;
+            topRow = true;
          }
-         if (vertical == SIZE -1)
+         if (vertexChangeical == SIZE -1)
          {
-            isBottomRow = true;
+            bottomRow = true;
          }
       }
    }
 
 
    /**
-    * This inner class implements the node class to implement 
-    * the graph data structure and helps with iterating linked lists
+    * Node inner class 
+    * Helps to traverse the linked list 
     */
    class Node
    {
       Node next = null;   
-      Vertex vertex;
+      Vertex vertexChange;
    }
 
    /**
-    * This method performs a Breadth First Search on a graph, using the pseudo
-    * code from Introduction to Algorithms, Third Edition by Cormen et all.
+    * This method performs a Breadth First Search on a graph, 
+    *  referencing from Introduction to Algorithms CLRS
     */
-   public void bfs()
+   public void breadthFirstSearch()
    {
-      int bfsVisit = 0;
-      Vertex starter = boxHelp[0][0]; //set starting point to the left top corner
-      starter.color = GRAY; //it gets discovered
-      starter.distance = 0; //distance starts at 0
-      starter.parent = null; //it has no parent since it is the first one
-      cellQueue.add(starter); //add the first vertex to the queue
+      int breadthFirstSearchVisit = 0;
+      Vertex starter = myVertex[0][0]; //Starts at top left 
+      starter.color = GRAY; //Gray for discovery 
+      starter.dist = 0; //distance initialize to zero
+      starter.parent = null; //Parent is set to null
+      myQueue.add(starter); //Add the starting vertexChange to the Queue 
 
-      while (!cellQueue.isEmpty()) //while there are still things in the queue
+      while (!myQueue.isEmpty()) //while queue is not empty 
       {
-         Vertex frontQ = cellQueue.remove();
-         Node node = linkedList[frontQ.label - 1];
+         Vertex frontQueue = myQueue.remove();
+         Node node = adjList[frontQueue.label - 1];
 
          
-         while(node != null) //scroll through each vertex's edges
+         while(node != null) //traverse each vertexChange 
          {
-            if(node.vertex.color == WHITE) //if it was undiscovered
+            if(node.vertexChange.color == WHITE) 
             {
-               node.vertex.color = GRAY; //turn gray
-               bfsVisit++; //update the order it was visited in
-               node.vertex.visitedOrder = bfsVisit; 
-               node.vertex.distance = frontQ.distance + 1;
-               node.vertex.parent = frontQ; //update the parent of the vertex
-               cellQueue.add(node.vertex); //add the node to the queue to discover adjacent later
+               node.vertexChange.color = GRAY; //Change the color to gray 
+               breadthFirstSearchVisit++; //Change the traversal order
+               node.vertexChange.visited = breadthFirstSearchVisit; 
+               node.vertexChange.dist = frontQueue.dist + 1;
+               node.vertexChange.parent = frontQueue; //Change the parent 
+               myQueue.add(node.vertexChange); //Insert the node to the queue 
             }
             node = node.next;
          }
       }
-      bfsTime = bfsVisit;
+      timerBFS = breadthFirstSearchVisit;
    }
 
    /**
-    * This method performs a Depth First Search on a graph, using the pseudo
-    * code from Introduction to Algorithms, Third Edition by Cormen et all.
+    * Performs a Depth First Search, referenced
+    *  from Introduction to Algorithms CLRS 
     */
-   public void dfs()
+   public void depthFirstSearch()
    {
       for(int i = 0; i < SIZE; i++)
       {
-         for(int j = 0; j < SIZE; j++) //for each vertex u 
+         for(int j = 0; j < SIZE; j++) 
          {
-            Vertex u = boxHelp[i][j];
-            u.color = WHITE;
-            u.parent = null;
+            Vertex vertexChangeTemp = myVertex[i][j];
+            vertexChangeTemp.color = WHITE;
+            vertexChangeTemp.parent = null;
          }
       }
-      dfsTime = 0;               
+      timerDFS = 0;               
       for(int i = 0; i < SIZE; i++)
       {
-         for(int j = 0; j < SIZE; j++) //for each vertex u 
+         for(int j = 0; j < SIZE; j++) 
          {
-            Vertex u = boxHelp[i][j];
-            if(u.color == WHITE)
-               dfsVisit(u);
+            Vertex vertexChangeTemp = myVertex[i][j];
+            if(vertexChangeTemp.color == WHITE)
+            	traversalDFS(vertexChangeTemp);
          }
       }
    }
 
    /**
-    * This helper method is used to perform a depth first search on a graph,
-    * using the pseudo code from Introduction to Algorithms, Third Edition
-    * by Cormen et all.
-    * @param vertex a vertex
+    *Method to help with DFS Traversal
+    * referenced from Introduction to Algorithms CLRS 
+    * @param vertexChange a vertexChange from the graph
     */
-   private void dfsVisit(Vertex vertex)
+   private void traversalDFS(Vertex vertexChange)
    {
 
-      dfsTime++;
-      vertex.visitedOrder = dfsVisit;
-      dfsVisit++;
-      vertex.color = GRAY;
-      vertex.discoveryTime = dfsTime;
+	  timerDFS++;
+      vertexChange.visited = traversalDFS;
+      traversalDFS++;
+      vertexChange.color = GRAY;
+      vertexChange.timeOfDiscovery = timerDFS;
 
-      Node node = linkedList[vertex.label - 1];
-      while(node != null) //for each vertex
+      Node node = adjList[vertexChange.label - 1];
+      while(node != null) 
       {
-         if(node.vertex.color == WHITE)
+         if(node.vertexChange.color == WHITE)
          {
-            node.vertex.parent = vertex;
-            dfsVisit(node.vertex); //visit recursively
+            node.vertexChange.parent = vertexChange;
+            traversalDFS(node.vertexChange); //Recursively traverse through 
          }
-         node = node.next; //go to the next node
+         node = node.next; 
       }
 
-      dfsTime++;
-      vertex.finishingTime = dfsTime;
-      vertex.color = BLACK; //it is finished
+      timerDFS++;
+      vertexChange.timeFinished = timerDFS;
+      vertexChange.color = BLACK; //Discovered 
    }
 
 
    /**
-    * This helper method displays an empty maze
-    * @param i the ith index in boxHelp graph
-    * @param j the jth index in boxHelp graph
+    * Method for displaying a blank maze 
+    * @param i index i of myVertex
+    * @param j index j of myVertex
     */
    private void displayEmpty(int i, int j)
    {
-      if(boxHelp[i][j].leftWallPresent)
+      if(myVertex[i][j].leftWallOccur)
       {
-         String t = boxHelp[i][j].isInPath ? "|#" : "| ";
-         System.out.print(t);
-         printedGraph += t;
+         String temp = myVertex[i][j].isInPath ? "|#" : "| ";
+         System.out.print(temp);
+         printedGraph = printedGraph + temp;
       }
       else
       {
-         String t = boxHelp[i][j].isInPath ? " #" : "  ";
-         System.out.print(t);
-         printedGraph += t;
+         String temp = myVertex[i][j].isInPath ? " #" : "  ";
+         System.out.print(temp);
+         printedGraph = printedGraph + temp;
       }
    }
 
    /**
     * This helper method displays the path of a breadth first search on a maze
-    * @param i the ith index in boxHelp graph
-    * @param j the jth index in boxHelp graph
+    * @param i the index in myVertex graph
+    * @param j the index in myVertex graph
     */
-   private void displayBfs(int i, int j)
+   private void displayBreadthFirstSearch(int i, int j)
    {
-      if(boxHelp[i][j].leftWallPresent)
+      if(myVertex[i][j].leftWallOccur)
       {
-         String t = (boxHelp[i][j].visitedOrder <= boxHelp[SIZE-1][SIZE-1].visitedOrder) 
-               ?  "|" + String.format("%1s", boxHelp[i][j].visitedOrder%10) : "| ";
-               System.out.print(t);
-               printedGraph += t;
+         String temp = (myVertex[i][j].visited <= myVertex[SIZE-1][SIZE-1].visited) 
+               ?  "|" + String.format("%1s", myVertex[i][j].visited%10) : "| ";
+               System.out.print(temp);
+               printedGraph = printedGraph + temp;
       }
       else
       {
-         String t = (boxHelp[i][j].visitedOrder <= boxHelp[SIZE-1][SIZE-1].visitedOrder) 
-               ?  "" + String.format("%2s", boxHelp[i][j].visitedOrder%10) : "  ";
-               System.out.print(t);
-               printedGraph += t;
+         String temp = (myVertex[i][j].visited <= myVertex[SIZE-1][SIZE-1].visited) 
+               ?  "" + String.format("%2s", myVertex[i][j].visited%10) : "  ";
+               System.out.print(temp);
+               printedGraph = printedGraph + temp;
       }
    }
 
    /**
     * This helper method displays the path of a depth first search on a maze
-    * @param i the ith index in boxHelp graph
-    * @param j the jth index in boxHelp graph
+    * @param a the index in myVertex graph
+    * @param b the index in myVertex graph
     */
-   private void displayDfs(int i, int j)
+   private void displayDepthFirstSearch(int a, int b)
    {
-      if(boxHelp[i][j].leftWallPresent)
+      if(myVertex[a][b].leftWallOccur)
       {
-         String t = boxHelp[i][j].discoveryTime <= boxHelp[SIZE-1][SIZE-1].discoveryTime ? 
-               "|" + String.format("%1s", boxHelp[i][j].visitedOrder%10) : "| ";
-               System.out.print(t);
-               printedGraph += t;
+         String temp = myVertex[a][b].timeOfDiscovery <= myVertex[SIZE-1][SIZE-1].timeOfDiscovery ? 
+               "|" + String.format("%1s", myVertex[a][b].visited%10) : "| ";
+               System.out.print(temp);
+               printedGraph = printedGraph + temp;
       }
       else
       {
-         String t = boxHelp[i][j].discoveryTime <= boxHelp[SIZE-1][SIZE-1].discoveryTime ?
-               "" +  String.format("%2s", boxHelp[i][j].visitedOrder%10) : "  ";
-               System.out.print(t);
-               printedGraph += t;
+         String temp = myVertex[a][b].timeOfDiscovery <= myVertex[SIZE-1][SIZE-1].timeOfDiscovery ?
+               "" +  String.format("%2s", myVertex[a][b].visited%10) : "  ";
+               System.out.print(temp);
+               printedGraph = printedGraph + temp;
       }
    }
 
    /**
-    * This method displays a maze
-    * @param search the type of search to be displayed, either and empty string,
-    * BFS for breadth first search, or DFS for depth first search.
+    * Method to display maze
+    * @param temp used to search a string 
     */
-   public void displayMaze(String search)
+   public void displayMaze(String temp)
    {
       System.out.println("");
       for(int i = 0; i < SIZE; i++)
       {
          for(int j = 0; j < SIZE; j++)
          {
-            if(boxHelp[i][j].topWallPresent)
+            if(myVertex[i][j].topWallOccur)
             {
-               String t = (boxHelp[i][j] == boxHelp[0][0]) ? "+ " : "+-";
-               System.out.print(t);
-               printedGraph += t;
+               String temp1 = (myVertex[i][j] == myVertex[0][0]) ? "+ " : "+-";
+               System.out.print(temp1);
+               printedGraph = printedGraph + temp1;
             }
             else
             {
@@ -312,7 +315,7 @@ class Graph
          System.out.println("+ ");
          for(int j = 0; j < SIZE; j++)
          {
-            switch(search)
+            switch(temp)
             {
             default:
             {
@@ -321,12 +324,12 @@ class Graph
             }
             case "BFS":
             {
-               displayBfs(i, j);
+               displayBreadthFirstSearch(i, j);
                break;
             }
             case "DFS":
             {
-               displayDfs(i, j);
+               displayDepthFirstSearch(i, j);
                break;
             }
             }
@@ -336,24 +339,24 @@ class Graph
 
       for(int j = 0; j < SIZE; j++)
       {
-         String t = j == SIZE-1 ? "+ " : "+-";
-         System.out.print(t);
-         printedGraph += t;
+         String temp1 = j == SIZE-1 ? "+ " : "+-";
+         System.out.print(temp1);
+         printedGraph = printedGraph + temp1;
       }
       System.out.println("+ ");
       
    }
 
    /**
-    * This getter method gets the neighbors of a vertex
-    * @param v the vertex to be searched
-    * @return the number of neighbors
+    * Method that gets adjacent neighbors of Vertex v
+    * @param v the input vertexChange 
+    * @return how many neighbors
     */
-   public int getNeighbors(Vertex v)
+   public int getAdjacent(Vertex v)
    {
       for(int x = 0; x < v.adjacent.size(); x++)
       {
-         if(v.adjacent.get(x).wasVisited)
+         if(v.adjacent.get(x).alreadyVisited)
          {
             v.adjacent.remove(v.adjacent.get(x));
          }
@@ -361,7 +364,7 @@ class Graph
       int adjacent = 0;
       for(int x = 0; x < v.adjacent.size(); x++)
       {
-         if(!v.adjacent.get(x).wasVisited)
+         if(!v.adjacent.get(x).alreadyVisited)
          {
             adjacent++;
          }
@@ -371,68 +374,68 @@ class Graph
 
 
    /**
-    * This method prints a path of a maze, using pseudocode from Introduction
-    * to Algorithms, Third Edition by Cormen et all, Page 601.
-    * @param v1 the first vertex
-    * @param v2 the second vertex
+    * Method that prints a path of a maze
+    * referenced from CLRS Chapter 22
+    * @param a vertexChange one
+    * @param b vertexChange two
     */
-   public void printPath(Vertex v1, Vertex v2)
+   public void printPath(Vertex a, Vertex b)
    {
-      if (v1.label == v2.label) 
+      if (a.label == b.label) 
       {
-         //print s
+         
       }
-      else if (v2.parent == null)
+      else if (b.parent == null)
       {
-         //no path from v1 to v2 exist
-         System.out.println("no path from vertex A to vertex B exists"); 
+         
+         System.out.println("Nonexistent path from A to B"); 
       }
       else
       {
-         printPath(v1, v2.parent);
+         printPath(a, b.parent);
       }
-      v2.isInPath = true;
+      b.isInPath = true;
    }
 
    /**
-    * This method fixes the adjacent vertices of a graph
-    * @param vert the vertex to be fixed
+    * Repairs the neighboring vertices
+    * @param vertexChange the vertex to be changed
     */
-   public void adjacentFix(Vertex vert)
+   public void repairAdj(Vertex vertexChange)
    {
-      if (vert.isLeftColumn == false) //set left Adjacent if it exist
+      if (vertexChange.leftCol == false) 
       {
-         Vertex leftAdjacent = boxHelp[vert.horizontalPos - 1][vert.verticalPos];
-         vert.adjacent.add(leftAdjacent);
+         Vertex leftAdjacent = myVertex[vertexChange.positionHorizontal - 1][vertexChange.positionVertical];
+         vertexChange.adjacent.add(leftAdjacent);
       }
 
-      if (vert.isRightColumn == false) //set right Adjacent if it exist
+      if (vertexChange.rightCol == false) 
       {
-         Vertex rightAdjacent = boxHelp[vert.horizontalPos + 1][vert.verticalPos];
-         vert.adjacent.add(rightAdjacent);
+         Vertex rightAdjacent = myVertex[vertexChange.positionHorizontal + 1][vertexChange.positionVertical];
+         vertexChange.adjacent.add(rightAdjacent);
       }
 
-      if (vert.isTopRow == false) //set top Adjacent if it exist
+      if (vertexChange.topRow == false) 
       {
-         Vertex topAdjacent = boxHelp[vert.horizontalPos][vert.verticalPos -1];
-         vert.adjacent.add(topAdjacent);
+         Vertex topAdjacent = myVertex[vertexChange.positionHorizontal][vertexChange.positionVertical -1];
+         vertexChange.adjacent.add(topAdjacent);
       }
 
-      if (vert.isBottomRow == false) //set bottom Adjacent if it exist
+      if (vertexChange.bottomRow == false) 
       {
-         Vertex bottomAdjacent = boxHelp[vert.horizontalPos][vert.verticalPos +1];
-         vert.adjacent.add(bottomAdjacent);
+         Vertex bottomAdjacent = myVertex[vertexChange.positionHorizontal][vertexChange.positionVertical +1];
+         vertexChange.adjacent.add(bottomAdjacent);
       }
    }
 
    /**
-    * This helper method deletes a wall between to cells of a maze
-    * @param bool the wall to knock down
+    * Method to delete a wall in the maze
+    * @param wall the wall to be deleted 
     * @return
     */
-   private boolean deleteWall(boolean bool)
+   private boolean deleteWall(boolean wall)
    {
-      if (bool)
+      if (wall)
       {
          return false;
       }
@@ -440,55 +443,55 @@ class Graph
    }
 
    /**
-    * This helper method removes a wall between two vertices
-    * @param current the current vertex
-    * @param next the neighboring vertex
+    * Method to remove a wall
+    * @param recent the recent vertex to be changed
+    * @param following the adjacent vertex to be changed
     */
-   private void removeWall(Vertex current, Vertex next)
+   private void removeWall(Vertex recent, Vertex following)
    {
-      if(current.label + SIZE == next.label)
+      if(recent.label + SIZE == following.label)
       {
-         next.topWallPresent = deleteWall(next.topWallPresent);
-         current.bottomWallPresent = deleteWall(current.bottomWallPresent);
-         current.adjacent.remove(next);
-         next.adjacent.remove(current);
+    	 following.topWallOccur = deleteWall(following.topWallOccur);
+         recent.bottomWallOccur = deleteWall(recent.bottomWallOccur);
+         recent.adjacent.remove(following);
+         following.adjacent.remove(recent);
       }
-      else if(current.label + 1 ==next.label)
+      else if(recent.label + 1 ==following.label)
       {
-         next.leftWallPresent =  deleteWall(next.leftWallPresent);
-         current.rightWallPresent = deleteWall(current.rightWallPresent);
-         current.adjacent.remove(next);
-         next.adjacent.remove(current);
+    	 following.leftWallOccur =  deleteWall(following.leftWallOccur);
+         recent.rightWallOccur = deleteWall(recent.rightWallOccur);
+         recent.adjacent.remove(following);
+         following.adjacent.remove(recent);
       }
-      else if(current.label -1 == next.label)
+      else if(recent.label -1 == following.label)
       {
-         next.rightWallPresent = deleteWall(next.rightWallPresent);
-         current.leftWallPresent = deleteWall(current.leftWallPresent);
-         current.adjacent.remove(next);
-         next.adjacent.remove(current);
+    	  following.rightWallOccur = deleteWall(following.rightWallOccur);
+         recent.leftWallOccur = deleteWall(recent.leftWallOccur);
+         recent.adjacent.remove(following);
+         following.adjacent.remove(recent);
       }
-      else if(current.label - SIZE == next.label)
+      else if(recent.label - SIZE == following.label)
       {
-         next.bottomWallPresent = deleteWall(next.bottomWallPresent);
-         current.topWallPresent = deleteWall(current.topWallPresent);
-         current.adjacent.remove(next);
-         next.adjacent.remove(current);
+    	 following.bottomWallOccur = deleteWall(following.bottomWallOccur);
+         recent.topWallOccur = deleteWall(recent.topWallOccur);
+         recent.adjacent.remove(following);
+         following.adjacent.remove(recent);
       }
    }
 
    /**
-    * This method generates a maze.
+    * Method to create a graph
     */
-   public void graphGenerator()
+   public void graphCreator()
    {
-      int label = 1;
+      int temp = 1;
       for (int i = 0; i < SIZE; i++)
       {
          for (int j = 0; j < SIZE; j++)
          {
-            Vertex vert = new Vertex(i, j, label);
-            boxHelp[i][j] = vert;
-            label++;
+            Vertex vertexChange = new Vertex(i, j, temp);
+            myVertex[i][j] = vertexChange;
+            temp++;
          }
       }
 
@@ -496,21 +499,21 @@ class Graph
       {
          for (int j = 0; j < SIZE; j++)
          {
-            Vertex current = boxHelp[i][j];
-            adjacentFix(current);
+            Vertex recent = myVertex[i][j];
+            repairAdj(recent);
          }
       }
-      mazeGenerator();
+      mazeCreator();
    }
 
    /**
-    * helper method to check if it is visited
-    * @param visit a boolean
-    * @return true if visit is false, other wise false;
+    * Method to see if the vertex is visited
+    * @param peek is a boolean value
+    * @return true if peek is false
     */
-   public boolean setVisit (boolean visit)
+   public boolean peek(boolean peek)
    {
-      if (visit == false)
+      if (peek == false)
       {
          return true;
       }
@@ -518,105 +521,103 @@ class Graph
    }
 
    /**
-    * helper method to iterate all the nodes til it is the last node
-    * @param n a node
+    * Method to traverse through nodes
+    * @param myNode is a node
     */
-   private Node goToLast(Node n)
+   private Node goToLast(Node myNode)
    {
-      while(n.next != null)
+      while(myNode.next != null)
       {
-         n = n.next;
+    	  myNode = myNode.next;
       }
-      return n;
+      return myNode;
    }
    
    /**
-    * helper method to check if node is the last in a linkedlist
-    * @param n a node
-    * @return true if it is the last node in linkedlist otherwise false
+    * Method to scan the last node in a LinkedList
+    * @param myNode is a node
+    * @return true if it is the last node in LinkedList otherwise false
     */
-   private boolean isLast(Node n)
+   private boolean isLast(Node myNode)
    {
-      return (n != null && n.next == null);
+      return (myNode != null && myNode.next == null);
    }
    
    /**
-    * This helper method aids the graphGenerator method in creating a maze
-    * to be searched. Code follows the structure of the sample maze generation
-    *  algorithm provided in project3.pdf
+    * Method to create a maze
     */
-   private void mazeGenerator()
+   private void mazeCreator()
    {
-      Stack<Vertex> cellStack = new Stack<Vertex>(); //create a cellStack LIFO
-      Vertex currentCell = boxHelp[0][0]; //choose the starting cell and call it current cell
-      currentCell.wasVisited = setVisit(currentCell.wasVisited);
-      int visitedCells = 1; //set visitedcells to 1
+      Stack<Vertex> myStack = new Stack<Vertex>(); 
+      Vertex tempVertex = myVertex[0][0]; 
+      tempVertex.alreadyVisited = peek(tempVertex.alreadyVisited);
+      int visitedVertex = 1; 
 
-      int totalCells = SIZE*SIZE;
-      while(visitedCells < totalCells)
+      int sum = SIZE*SIZE;
+      while(visitedVertex < sum)
       {
-         if(getNeighbors(currentCell) >= 1) //find neighbors with walls intact(unvisited neighbors)
+         if(getAdjacent(tempVertex) >= 1) //find neighbors with walls intact(unvisited neighbors)
          {
-            int random = myRandGen.nextInt(getNeighbors(currentCell)); //if one or more found choose at random
-            Vertex randomNeighbor = currentCell.adjacent.get(random);
-            removeWall(randomNeighbor, currentCell); //knock down wall between it and currentCell
+            int myRandom1 = myRandom.nextInt(getAdjacent(tempVertex)); //if one or more found choose at random
+            Vertex randomTemp = tempVertex.adjacent.get(myRandom1);
+            removeWall(randomTemp, tempVertex); //knock down wall between it and tempVertex
 
-            Node neighborNode = new Node();
-            neighborNode.vertex = randomNeighbor;
-            Node currentNode = linkedList[currentCell.label-1];
+            Node myNode = new Node();
+            myNode.vertexChange = randomTemp;
+            Node currentNode = adjList[tempVertex.label-1];
 
             if (!isNull(currentNode)) 
             {
                currentNode = goToLast(currentNode);
-               if (isLast(currentNode)) { currentNode.next = neighborNode; }
+               if (isLast(currentNode)) { currentNode.next = myNode; }
             }
 
             else if (isNull(currentNode))
             {
-               currentNode = neighborNode;
-               generateHelper(currentCell, currentNode);
+               currentNode = myNode;
+               generateHelper(tempVertex, currentNode);
             }
 
-            Node currentCellNode = new Node();
-            currentCellNode.vertex = currentCell;
-            currentNode = linkedList[randomNeighbor.label-1];
+            Node tempVertexNode = new Node();
+            tempVertexNode.vertexChange = tempVertex;
+            currentNode = adjList[randomTemp.label-1];
             if (!isNull(currentNode)) 
             {
                currentNode = goToLast(currentNode);
-               if (isLast(currentNode)) { currentNode.next = currentCellNode; }
+               if (isLast(currentNode)) { currentNode.next = tempVertexNode; }
             }
             else if (isNull(currentNode))
             {
-               currentNode = currentCellNode;
-               generateHelper(randomNeighbor, currentCellNode);
+               currentNode = tempVertexNode;
+               generateHelper(randomTemp, tempVertexNode);
             }
 
-            visitedCells = visitedCells +1;
-            cellStack.push(currentCell);
-            currentCell = randomNeighbor;
-            currentCell.wasVisited = true;
+            visitedVertex = visitedVertex +1;
+            myStack.push(tempVertex);
+            tempVertex = randomTemp;
+            tempVertex.alreadyVisited = true;
          }
-         else currentCell = cellStack.pop();
+         else tempVertex = myStack.pop();
       }     
    }
    
    /**
-    * Helper method to set previous to current node
-    * @param a A vertex
-    * @param b a Node
+    * Change previous node to current node
+    * @param v1 vertex to be changed
+    * @param v2 is a Node
     */
-   private void generateHelper(Vertex a, Node b)
+   private void generateHelper(Vertex v1, Node v2)
    {
-      linkedList[a.label - 1] = b;
+      adjList[v1.label - 1] = v2;
    }
    
    /**
-    * Helper method to check if a node is null
-    * @param n a Node
+    * Check if node is null 
+    * @param temp is a Node
     * @return a boolean
     */
-   private boolean isNull (Node n)
+   private boolean isNull (Node temp)
    {
-      return n == null;
+      return temp == null;
    }
 }
